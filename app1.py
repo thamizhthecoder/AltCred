@@ -1,68 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for
-import os
-from werkzeug.utils import secure_filename
 import firebase_admin
 from firebase_admin import credentials, firestore
 from ml_model import predict_score
 import pandas as pd
-import easyocr
-import re
+import os
 
 app = Flask(__name__)
-UPLOAD_FOLDER = 'static/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Load credit-related CSV
-df = pd.read_csv("synthetic_credit_score_calc.csv")
+# Load CSVs
+df_credit = pd.read_csv("synthetic_credit_score_calc.csv")
+df_txn = pd.read_csv("transaction_details.csv")
 
-# Firebase Init
+# Initialize Firebase
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
-
-# EasyOCR Init
-reader = easyocr.Reader(['en'])
-
-def clean_email(text):
-    return text.replace(" ", "").lower()
-
-def process_image(image_path):
-    result = reader.readtext(image_path)
-    lines = [detection[1].strip() for detection in result]
-
-    # Extract integer from line 3
-    line_3_value = None
-    if len(lines) >= 3:
-        digits_in_line3 = re.findall(r'\d+', lines[2])
-        if digits_in_line3:
-            try:
-                line_3_value = int(digits_in_line3[0][1:])
-            except:
-                pass
-
-    # Extract emails
-    seen = set()
-    email_lines = []
-    for line in lines:
-        if '@' in line:
-            cleaned = clean_email(line)
-            if cleaned not in seen:
-                seen.add(cleaned)
-                email_lines.append(cleaned)
-
-    # Extract transaction ID
-    transaction_id = None
-    for idx, line in enumerate(lines):
-        if 'upi transaction id' in line.lower():
-            if idx + 1 < len(lines):
-                transaction_id = lines[idx + 1].strip()
-
-    return {
-        'line3_int': line_3_value,
-        'emails': email_lines,
-        'transaction_id': transaction_id
-    }
 
 @app.route('/')
 def main():
@@ -105,6 +59,7 @@ def credit():
             avg_amount = float(request.form['avg_amount'])
 
             score = predict_score(user_id, amount, avg_amount)
+
             return render_template('results.html', user_id=user_id, score=score)
 
         except Exception as e:
@@ -112,54 +67,49 @@ def credit():
 
     return render_template('credit.html')
 
+
 @app.route('/community', methods=['GET', 'POST'])
 def community():
-    result = None
-
     if request.method == 'POST':
-        current_user_id = request.form.get('currentUserId')
-        target_user_id = request.form.get('targetUserId')
-        sent_file = request.files.get('sentScreenshot')
-        received_file = request.files.get('receivedScreenshot')
+        current_user = request.form['currentUserId']
+        endorsed_user = request.form['targetUserId']
 
-        if not (sent_file and received_file):
-            result = "❌ Please upload both screenshots."
-            return render_template("community.html", result=result)
+        # Save screenshots (optional)
+        sent_screenshot = request.files['sentScreenshot']
+        received_screenshot = request.files['receivedScreenshot']
+        if sent_screenshot:
+            sent_screenshot.save(os.path.join(app.config['UPLOAD_FOLDER'], sent_screenshot.filename))
+        if received_screenshot:
+            received_screenshot.save(os.path.join(app.config['UPLOAD_FOLDER'], received_screenshot.filename))
 
-        sent_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{current_user_id}_sent.png")
-        received_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{current_user_id}_received.png")
-        sent_file.save(sent_path)
-        received_file.save(received_path)
+        # Match both forward and reverse transactions
+        forward_match = (
+            (df_txn['sender'] == current_user) &
+            (df_txn['recipient'] == endorsed_user)
+        ).any()
 
-        data1 = process_image(sent_path)
-        data2 = process_image(received_path)
+        reverse_match = (
+            (df_txn['sender'] == endorsed_user) &
+            (df_txn['recipient'] == current_user)
+        ).any()
 
-        results = []
-
-        if data1['line3_int'] and data2['line3_int']:
-            if data1['line3_int'] == data2['line3_int']:
-                results.append(f"✅ Amount Match: ₹{data1['line3_int']}")
+        if forward_match and reverse_match:
+            # Update num_verified_endorsers in synthetic_credit_score_calc.csv
+            credit_df = pd.read_csv("synthetic_credit_score_calc.csv")
+            if endorsed_user in credit_df['user_id'].values:
+                idx = credit_df[credit_df['user_id'] == endorsed_user].index[0]
+                credit_df.at[idx, 'num_verified_endorsers'] += 1
+                credit_df.to_csv("synthetic_credit_score_calc.csv", index=False)
+                message = f"Endorsement successful! {endorsed_user} has been verified."
             else:
-                results.append(f"❌ Amount Mismatch: ₹{data1['line3_int']} vs ₹{data2['line3_int']}")
+                message = f"Endorsed user ID '{endorsed_user}' not found in credit score data."
         else:
-            results.append("❌ Amount not detected.")
+            message = "Verification failed. Matching transactions not found in transaction log."
 
-        if len(data1['emails']) >= 2 and len(data2['emails']) >= 2:
-            if data1['emails'][1] == data2['emails'][0] and data1['emails'][0] == data2['emails'][1]:
-                results.append("✅ Emails match.")
-            else:
-                results.append("❌ Emails do not match.")
-        else:
-            results.append("❌ Insufficient email data.")
+        return render_template('endorsement_result.html', message=message)
 
-        if data1['transaction_id'] == data2['transaction_id']:
-            results.append("✅ UPI Transaction ID matched.")
-        else:
-            results.append("❌ UPI Transaction ID mismatch.")
+    return render_template('community.html')
 
-        result = "<br>".join(results)
-
-    return render_template("community.html", result=result)
 
 if __name__ == '__main__':
     app.run(debug=True)

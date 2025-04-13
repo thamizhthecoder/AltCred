@@ -11,7 +11,7 @@
 
   <style>
     body {
-      background-color: #f7f9fb;
+      background-color: #ffffff;
       font-family: 'Open Sans', sans-serif;
     }
 
@@ -46,7 +46,7 @@
 
       <div class="gauge-box">
         <canvas id="scoreGauge" width="300" height="300"></canvas>
-        <div class="score-value">{{ score }}/500</div>
+        <div class="score-value">{{ score*2 }}/1000</div>
       </div>
 
       {% if error %}
@@ -65,14 +65,15 @@
       height: 300,
       units: "Score",
       minValue: 0,
-      maxValue: 500,
-      majorTicks: ["0", "100", "200", "300", "400", "500"],
+      maxValue: 1000,
+      majorTicks: ["0", "200", "400", "600", "800", "1000"],
       minorTicks: 2,
       strokeTicks: true,
       highlights: [
-        { from: 0, to: 200, color: "rgba(255,0,0,.3)" },
-        { from: 200, to: 350, color: "rgba(255,255,0,.3)" },
-        { from: 350, to: 500, color: "rgba(0,255,0,.3)" }
+        { from: 0, to: 250, color: "rgba(255,0,0)" },
+        { from: 250, to: 500, color: "rgba(255,255,0)" },
+        { from: 500, to: 750, color: "rgba(144, 238, 144)" },
+        { from: 750, to: 1000, color: "rgba(0, 100, 0)" }      
       ],
       colorPlate: "#fff",
       needleType: "arrow",
@@ -80,7 +81,7 @@
       needleCircleSize: 7,
       animationDuration: 1500,
       animationRule: "linear",
-      value: score
+      value: (score*2)
     }).draw();
   </script>
 </body>
