@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Peer Endorsement Form</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    label {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    input[type="submit"] {
+      background-color: #007bff;
+      color: white;
+      padding: 0.75rem;
+      border: none;
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+    .result-box {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #f1f1f1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Peer Endorsement</h2>
+    <form method="POST" enctype="multipart/form-data">
+      <label for="currentUserId">Your User ID</label>
+      <input type="text" name="currentUserId" id="currentUserId" required>
+
+      <label for="targetUserId">User ID You're Endorsing</label>
+      <input type="text" name="targetUserId" id="targetUserId" required>
+
+      <label for="sentScreenshot">Upload Screenshot (Sent)</label>
+      <input type="file" name="sentScreenshot" id="sentScreenshot" accept="image/*" required>
+
+      <label for="receivedScreenshot">Upload Screenshot (Received)</label>
+      <input type="file" name="receivedScreenshot" id="receivedScreenshot" accept="image/*" required>
+
+      <input type="submit" value="Submit Endorsement">
+    </form>
+
+    {% if result %}
+    <div class="result-box mt-4">
+      <strong>Validation Result:</strong><br>
+      {{ result | safe }}
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>
