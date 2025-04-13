@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Endorsement Result | ALT-CRED</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      text-align: center;
+    }
+
+    .emoji {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      color: #28a745;
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      margin-top: 1.5rem;
+      padding: 0.6rem 1.2rem;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="emoji">🎉</div>
+    <h1>Congratulations!</h1>
+    <p>Transactions have been noted successfully.</p>
+    <a href="{{ url_for('community') }}" class="btn">Back to Endorsement</a>
+  </div>
+
+</body>
+</html>

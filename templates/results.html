@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Score Result - ALT-CRED</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <style>
+    body {
+      background-color: #ffffff;
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .gauge-box {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .score-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    .btn-back {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="site-wrap">
+
+    <div class="container">
+      <h2 class="mb-4">Your Credit Score</h2>
+      <p class="lead">Hey <strong>{{ user_id }}</strong>, here’s your AI-predicted score!</p>
+
+      <div class="gauge-box">
+        <canvas id="scoreGauge" width="300" height="300"></canvas>
+        <div class="score-value">{{ score*2 }}/1000</div>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-danger mt-4">{{ error }}</div>
+      {% endif %}
+
+      <a href="{{ url_for('credit') }}" class="btn btn-primary btn-back">Check Another</a>
+    </div>
+  </div>
+
+  <script>
+    var score = {{ score | round(2) }};
+    new RadialGauge({
+      renderTo: 'scoreGauge',
+      width: 300,
+      height: 300,
+      units: "Score",
+      minValue: 0,
+      maxValue: 1000,
+      majorTicks: ["0", "200", "400", "600", "800", "1000"],
+      minorTicks: 2,
+      strokeTicks: true,
+      highlights: [
+        { from: 0, to: 250, color: "rgba(255,0,0)" },
+        { from: 250, to: 500, color: "rgba(255,255,0)" },
+        { from: 500, to: 750, color: "rgba(144, 238, 144)" },
+        { from: 750, to: 1000, color: "rgba(0, 100, 0)" }      
+      ],
+      colorPlate: "#fff",
+      needleType: "arrow",
+      needleWidth: 2,
+      needleCircleSize: 7,
+      animationDuration: 1500,
+      animationRule: "linear",
+      value: (score*2)
+    }).draw();
+  </script>
+</body>
+</html>
